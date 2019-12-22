@@ -1,9 +1,10 @@
-package no.svv.utils;
+package no.il.utils;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Map;
 
@@ -26,15 +27,15 @@ public class HttpCaller {
                     postData.append('=');
                     postData.append(URLEncoder.encode(String.valueOf(param.getValue()), "UTF-8"));
                 }
+
                 byte[] postDataBytes = postData.toString().getBytes("UTF-8");
-
                 connection.getOutputStream().write(postDataBytes);
-
             }
 
-            StringBuilder response = new StringBuilder(); // or StringBuffer if Java version 5+
+            StringBuffer response = new StringBuffer();
+            //StringBuilder response = new StringBuilder(); // or StringBuffer if Java version 5+
             int responseCode = connection.getResponseCode();
-            if (responseCode == 200) {
+            if (responseCode == 200) { // OK
                 InputStream is = connection.getInputStream();
                 BufferedReader rd = new BufferedReader(new InputStreamReader(is));
                 String line;
@@ -53,11 +54,9 @@ public class HttpCaller {
                     response.append('\n');
                 }
                 rd.close();
-                //response.append("{\"error\":\"401\",\"error_massage\":\"message\"}");
             } else {
                 InputStream is = connection.getErrorStream();
                 BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-                //StringBuilder response = new StringBuilder(); // or StringBuffer if Java version 5+
                 String line;
                 while ((line = rd.readLine()) != null) {
                     response.append(line);
@@ -73,8 +72,8 @@ public class HttpCaller {
         }
     }
 
-
     public static String execute(HttpURLConnection connection) {
         return execute(connection,null);
     }
+
 }

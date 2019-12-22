@@ -1,4 +1,4 @@
-package no.svv.dto;
+package no.il.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 

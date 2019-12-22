@@ -1,4 +1,4 @@
-package no.svv.utils;
+package no.il.utils;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -12,11 +12,71 @@ public class PropertiesReader {
 
     private String aud;
     private String resource;
-    private String tokenEndpoint, scopesEndpoint, clientsEndpoint, keysEndpoints;
+    private String baseUrl;
+    private String accessTokenUser, accessTokenScope, scopeUserRead, certificateUserRead, clientUserRead;
+    private String tokenEndpoint, scopesEndpoint, clientsEndpoint, certificateEndpoint;
 
+    private boolean prettyPrintJWT;
     private X509Certificate certificate;
     private PrivateKey privateKey;
 
+    public boolean prettyPrintJWT() {
+        return prettyPrintJWT;
+    }
+
+    public void setPrettyPrintJWT(String prettyPrintJWTResult) {
+        if (prettyPrintJWTResult != null && prettyPrintJWTResult.equalsIgnoreCase("true")) {
+            prettyPrintJWT = true;
+        }
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
+    public String getAccessTokenUser() {
+        return accessTokenUser;
+    }
+
+    public void setAccessTokenUser(String accessTokenUser) {
+        this.accessTokenUser = accessTokenUser;
+    }
+
+    public String getAccessTokenScope() {
+        return accessTokenScope;
+    }
+
+    public void setAccessTokenScope(String accessTokenScope) {
+        this.accessTokenScope = accessTokenScope;
+    }
+
+    public String getScopeUserRead() {
+        return scopeUserRead;
+    }
+
+    public void setScopeUserRead(String scopeUserRead) {
+        this.scopeUserRead = scopeUserRead;
+    }
+
+    public String getCertificateUserRead() {
+        return certificateUserRead;
+    }
+
+    public void setCertificateUserRead(String certificateUserRead) {
+        this.certificateUserRead = certificateUserRead;
+    }
+
+    public String getClientUserRead() {
+        return clientUserRead;
+    }
+
+    public void setClientUserRead(String clientUserRead) {
+        this.clientUserRead = clientUserRead;
+    }
 
     public String getAud() {
         return aud;
@@ -58,12 +118,12 @@ public class PropertiesReader {
         this.clientsEndpoint = clientsEndpoint;
     }
 
-    public String getKeysEndpoints() {
-        return keysEndpoints;
+    public String getCertificateEndpoint() {
+        return certificateEndpoint;
     }
 
-    public void setKeysEndpoints(String keysEndpoints) {
-        this.keysEndpoints = keysEndpoints;
+    public void setCertificateEndpoint(String certificateEndpoint) {
+        this.certificateEndpoint = certificateEndpoint;
     }
 
     public X509Certificate getCertificate() {
@@ -88,14 +148,23 @@ public class PropertiesReader {
 
         Properties props = readPropertyFile(path);
 
+        config.setPrettyPrintJWT(props.getProperty("prettyPrintJWT"));
 
         config.setAud(props.getProperty("audience"));
         config.setResource(props.getProperty("resource"));
 
-        config.setKeysEndpoints(props.getProperty("keys.endpoint"));
-        config.setClientsEndpoint(props.getProperty("clients.endpoint"));
-        config.setScopesEndpoint(props.getProperty("scopes.endpoint"));
         config.setTokenEndpoint(props.getProperty("token.endpoint"));
+        config.setAccessTokenUser(props.getProperty("accesstoken.user"));
+        config.setAccessTokenScope(props.getProperty("accesstoken.scope"));
+
+        config.setScopesEndpoint(props.getProperty("scopes.endpoint"));
+        config.setScopeUserRead(props.getProperty("scope.read.user"));
+
+        config.setCertificateEndpoint(props.getProperty("certificate.endpoint"));
+        config.setCertificateUserRead(props.getProperty("certificate.read.user"));
+
+        config.setClientsEndpoint(props.getProperty("clients.endpoint"));
+        config.setClientUserRead(props.getProperty("client.read.user"));
 
         String keystoreFile = props.getProperty("keystore.file");
         String keystorePassword = props.getProperty("keystore.password");

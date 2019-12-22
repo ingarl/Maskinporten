@@ -1,4 +1,4 @@
-package no.svv.dto;
+package no.il.dto;
 
 public class JWT {
     private String header;

@@ -1,4 +1,4 @@
-package no.svv;
+package no.il;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -8,12 +8,10 @@ import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.util.Base64;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import no.svv.dto.JWT;
-import no.svv.dto.TokenResponse;
-import no.svv.utils.HttpCaller;
-import no.svv.utils.PropertiesReader;
-import org.json.JSONObject;
-
+import no.il.utils.decode;
+import no.il.dto.TokenResponse;
+import no.il.utils.HttpCaller;
+import no.il.utils.PropertiesReader;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -21,12 +19,7 @@ import java.net.URL;
 import java.util.*;
 
 /**
- * Dokumentasjon
- * https://www.mkyong.com/java/how-to-send-http-request-getpost-in-java/ (Er kanskje ikke så bra alikevel.
- * https://www.baeldung.com/java-http-request
  *
- * Lage nøkkelpar og konvertere til Java format
- * https://stackoverflow.com/questions/11410770/load-rsa-public-key-from-file
  */
 public class Maskinporten {
 
@@ -43,99 +36,133 @@ public class Maskinporten {
             System.exit(0);
         }
 
+        Maskinporten theProgram = new Maskinporten(path);
+        theProgram.goProgram();
+    }
+
+    public Maskinporten(String path) {
         try {
-            Maskinporten theProgram = new Maskinporten(path);
-            theProgram.getForerkortToken();
-            /*theProgram.listSVVScope();
-            theProgram.listSVVClients();
-            theProgram.listRegisteredCertificates();
-*/
-        } catch (Exception e) {
+            props = PropertiesReader.load(path);
+        } catch(Exception e) {
             e.printStackTrace();
         }
     }
 
-    public Maskinporten(String path) throws Exception {
-        props = PropertiesReader.load(path);
+    private void goProgram() {
+        if (props.getAccessTokenUser() != null) {
+            getAccessToken(props.getAccessTokenUser(), props.getAccessTokenScope());
+        }
+
+        if (props.getClientUserRead() != null) {
+            listClients(props.getClientUserRead());
+        }
+
+        if (props.getScopeUserRead() != null) {
+            listScopes(props.getScopeUserRead());
+        }
+
+        if (props.getCertificateUserRead() != null) {
+            listRegisteredCertificates(props.getCertificateUserRead());
+        }
 
     }
 
     /**
-     * Retrieve all clients registered to the clients org.nr.
-     * Requeire a client who has access to the scope: idporten:dcr.read
-     * @throws Exception
+     * Retrieves a access_token for the provided scope. The client must be configured with the required scope in
+     * Maskinporten.
+     * @param clientId - The client with access to the scope
+     * @param scope - The scope to be included in the access_token
      */
-    private void listSVVClients() throws Exception {
-        System.out.println("Getting all SVV clients");
-        System.out.println("---------------------------------------------");
-        String adminJWT = generateSignedJWT("oidc_svv_api2","idporten:dcr.read");
-        decodeJWT(adminJWT,"SVV", true);
-        TokenResponse tokenResponse = getTokenResponse(adminJWT);
-        decodeJWT(tokenResponse.getAccess_token(),"AccessToken",true);
-        prettyPrintJson("All SVV clients:\n",getClient(tokenResponse.getAccess_token()));
-        //System.out.println("\nGetting clients:\n"+getClient(tokenResponse.getAccess_token()));
-        System.out.println("---------------------------------------------\n\n");
+    public void getAccessToken(String clientId, String scope) {
+        try {
+            System.out.println("Getting access_token for client '" + clientId + "' with scope: " + scope);
+            System.out.println("---------------------------------------------");
+
+            String svvJWT = generateSignedJWT(clientId, scope);
+            decode.JWT(svvJWT, "Virksomhet", props.prettyPrintJWT());
+
+            TokenResponse tokenResponse = getTokenResponse(svvJWT);
+            decode.JWT(tokenResponse.getAccess_token(), "AccessToken", props.prettyPrintJWT());
+
+            System.out.println("---------------------------------------------\n\n");
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+    /**
+     * Retrieve all clients registered to the clients org.nr.
+     * Require a client who has access to the scope: idporten:dcr.read
+     */
+    public void listClients(String clientId) {
+        try {
+            System.out.println("Getting all SVV clients");
+            System.out.println("---------------------------------------------");
+
+            String adminJWT = generateSignedJWT(clientId, "idporten:dcr.read");
+            decode.JWT(adminJWT, "Virksomhet", props.prettyPrintJWT());
+
+            TokenResponse tokenResponse = getTokenResponse(adminJWT);
+            decode.JWT(tokenResponse.getAccess_token(), "AccessToken", props.prettyPrintJWT());
+
+            String clients = getClient(tokenResponse.getAccess_token());
+            decode.JSON("All clients:\n", clients);
+
+            System.out.println("---------------------------------------------\n\n");
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**
      * Retrieve all scopes registered to the clients org.nr.
      * Requeire a client who has access to the scope: idporten:scopes.read
-     * @throws Exception
      */
-    private void listSVVScope() throws Exception {
-        System.out.println("Getting all scopes defined by SVV");
-        System.out.println("---------------------------------------------");
+    public void listScopes(String clientId) {
+        try {
+            System.out.println("Getting all scopes defined by clients company");
+            System.out.println("---------------------------------------------");
 
-        //Generate SVV JWT used to authenticate SVV against Maskinporten.
-        String svvJWT = generateSignedJWT("oidc_svv_api2","idporten:scopes.read");
-        decodeJWT(svvJWT,"SVV", true);
+            //Generate SVV JWT used to authenticate SVV against Maskinporten.
+            String svvJWT = generateSignedJWT(clientId, "idporten:scopes.read");
+            decode.JWT(svvJWT, "Virksomhet", props.prettyPrintJWT());
 
-        TokenResponse tokenResponse = getTokenResponse(svvJWT);
-        decodeJWT(tokenResponse.getAccess_token(),"AccessToken", true);
+            TokenResponse tokenResponse = getTokenResponse(svvJWT);
+            decode.JWT(tokenResponse.getAccess_token(), "AccessToken", props.prettyPrintJWT());
 
-        String scopes = getScopes(tokenResponse.getAccess_token());
-        prettyPrintJson("All SVV scopes:\n",scopes);
+            String scopes = getScopes(tokenResponse.getAccess_token());
+            decode.JSON("All scopes:\n", scopes);
 
-        System.out.println("---------------------------------------------\n\n");
+            System.out.println("---------------------------------------------\n\n");
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**
      * Retrieve all registered certificates registered to the clients org.nr.
-     * Requeire a client who has access to the scope: idporten:dcr.read
-     * @throws Exception
+     * Requeire a client with access to the scope: idporten:dcr.read
      */
-    private void listRegisteredCertificates() throws Exception {
-        System.out.println("Getting all certificates registered by SVV");
-        System.out.println("---------------------------------------------");
+    public void listRegisteredCertificates(String clientId) {
+        try {
+            System.out.println("Getting all certificates registered by the clients company");
+            System.out.println("---------------------------------------------");
 
-        String svvJWT = generateSignedJWT("oidc_svv_api2","idporten:dcr.read");
-        decodeJWT(svvJWT,"SVV", true);
+            String svvJWT = generateSignedJWT(clientId, "idporten:dcr.read");
+            decode.JWT(svvJWT, "Virksomhet", props.prettyPrintJWT());
 
-        TokenResponse tokenResponse = getTokenResponse(svvJWT);
-        String certs = getClientCerts(tokenResponse.getAccess_token());
-        prettyPrintJson("All SVV keys:\n", certs);
+            TokenResponse tokenResponse = getTokenResponse(svvJWT);
+            decode.JWT(tokenResponse.getAccess_token(), "AccessToken", props.prettyPrintJWT());
 
-        System.out.println("---------------------------------------------\n\n");
-    }
+            String certs = getClientCerts(tokenResponse.getAccess_token());
+            decode.JSON("All certificates:\n", certs);
 
-
-    /**
-     * Retrieves a access_token with the scope svv:forerkort.
-     * Requeire a client who has access to the scope: svv:forerkort
-     * @throws Exception
-     */
-    private void getForerkortToken() throws Exception {
-        System.out.println("Getting access_token for svv:forerkort");
-        System.out.println("---------------------------------------------");
-
-        //String svvJWT = generateSignedJWT("e83bc4e7-d89f-4d23-bafd-dfdab5ed4c19","svv:forerkort");
-        String svvJWT = generateSignedJWT("oidc_svv_api2","skatteetaten:medhjemmel");
-        decodeJWT(svvJWT,"SVV", true);
-
-        TokenResponse tokenResponse = getTokenResponse(svvJWT);
-        decodeJWT(tokenResponse.getAccess_token(),"AccessToken", true);
-
-        System.out.println("---------------------------------------------\n\n");
+            System.out.println("---------------------------------------------\n\n");
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -159,6 +186,7 @@ public class Maskinporten {
 
         JWTClaimsSet claims = new JWTClaimsSet.Builder()
                 .audience(props.getAud())
+                //.claim("resource", props.getResource())
                 .issuer(clientId)
                 .claim("scope", scope)
                 .jwtID(UUID.randomUUID().toString()) // Must be unique for each grant
@@ -173,7 +201,6 @@ public class Maskinporten {
 
         return signedJWT.serialize();
     }
-
 
     /**
      * Retrieve the access_token based on the signed JWT.
@@ -194,7 +221,6 @@ public class Maskinporten {
 
             // Setting Request Headers
             connection.setRequestProperty("Content-Type","application/x-www-form-urlencoded");
-
 
             Map<String,Object> params = new LinkedHashMap<String,Object>();
             params.put("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer");
@@ -217,7 +243,6 @@ public class Maskinporten {
         }
         return tokenResponse;
     }
-
 
     /**
      * Retrieve the JSON with all scopes the access_token has access to.
@@ -246,10 +271,9 @@ public class Maskinporten {
         return response;
     }
 
-
     /**
-     * Returns all clients registered to the company
-     * @param accessToken The access_token with client information.
+     * Retrieve the JSON with information of all clients the access_token has access to.
+     * @param accessToken The OAUTH access_token giving access to the /clients endpoint.
      * @return The JSON with all clients registered to the company.
      */
     private String getClient(String accessToken) {
@@ -272,13 +296,11 @@ public class Maskinporten {
             return "error";
         }
         return response;
-
     }
-
 
     /**
      * Get alle certificates registered by the company
-     * @param accessToken
+     * @param accessToken The OAUTH access_token giving access to the /jwks endpoint.
      * @return JSON with information of all certificates.
      */
     private String getClientCerts(String accessToken) {
@@ -287,7 +309,7 @@ public class Maskinporten {
 
         try {
             //Create connection
-            URL url = new URL(props.getKeysEndpoints());
+            URL url = new URL(props.getCertificateEndpoint());
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
 
@@ -317,65 +339,5 @@ public class Maskinporten {
             e.printStackTrace();
         }
         return null;
-    }
-
-
-    /**
-     * Decoder en Base64 encoded JWT.
-     * @param jwtToken
-     * @return
-     */
-    private JWT decodeJWT(String jwtToken, String title, boolean showResult) {
-
-        if (jwtToken == null) {
-            System.out.println("JWT token er null!");
-            return null;
-        }
-        String[] split_string = jwtToken.split("\\.");
-        String base64EncodedHeader = split_string[0];
-        String base64EncodedBody = split_string[1];
-        String base64EncodedSignature = split_string[2];
-
-        byte[] decodedHeader = java.util.Base64.getMimeDecoder().decode(base64EncodedHeader);
-        String header = new String(decodedHeader);
-
-
-        byte[] decodedBody = java.util.Base64.getMimeDecoder().decode(base64EncodedBody);
-        String body = new String(decodedBody);
-
-        //System.out.println("~~~~~~~~~ JWT Signature ~~~~~~~");
-        //byte[] decodedSignature = java.util.Base64.getMimeDecoder().decode(base64EncodedSignature);
-        //String signature = new String(decodedSignature);
-        //System.out.println("JWT signature : "+signature);
-
-        //System.out.println("-------------------------");
-
-        if (showResult) {
-            System.out.println("~~~~~~~~~ "+title+" JWT ~~~~~~~");
-            System.out.println(jwtToken);
-
-            System.out.println("~~~~~~~~~ "+title+" JWT Header ~~~~~~~");
-            //System.out.println(header);
-            JSONObject headerJson = new JSONObject(header); // Convert text to object
-            System.out.println(headerJson.toString(4)); // Print it with specified indentation
-
-            System.out.println("~~~~~~~~~ "+title+" JWT Body ~~~~~~~");
-            JSONObject bodyJson = new JSONObject(body); // Convert text to object
-            System.out.println(bodyJson.toString(4)); // Print it with specified indentation
-
-        }
-
-        return new JWT(header,body);
-    }
-
-    private void prettyPrintJson(String title, String json) {
-        //String scopes = getScopes(tokenResponse.getAccess_token());
-        if (json.startsWith("[")) {
-            json = json.substring(1,json.length()-2); // Responsen fra Difi er ikke helt JSON, så litt magi må på plass
-        }
-        //String scopesFixed = scopes.substring(1,scopes.length()-2); // Responsen fra Difi er ikke helt JSON, så litt magi må på plass
-
-        JSONObject scopeJson = new JSONObject(json); // Convert text to object
-        System.out.println(title+scopeJson.toString(4)); // Print it with specified indentation
     }
 }
