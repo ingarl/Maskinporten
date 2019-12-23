@@ -3,14 +3,21 @@ package no.il.utils;
 import no.il.dto.JWT;
 import org.json.JSONObject;
 
-public class decode {
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+
+public class Print {
+
+    private static BufferedWriter bufferedWriter = null;
 
     /**
      * Decoder en Base64 encoded JWT.
      * @param jwtToken
      * @return
      */
-    public static JWT JWT(String jwtToken, String title, boolean showResult) {
+    public static JWT JWT(String jwtToken, String title, PropertiesReader props) {
 
         if (jwtToken == null) {
             System.out.println("JWT token er null!");
@@ -35,22 +42,22 @@ public class decode {
 
         //System.out.println("-------------------------");
 
-        System.out.println("~~~~~~~~~ "+title+" JWT ~~~~~~~");
-        System.out.println(jwtToken);
-        if (showResult) {
+        out("========= "+title+" =======");
+        out(jwtToken);
+        if (props.prettyPrintJWT()) {
 
-            System.out.println("~~~~~~~~~ "+title+" JWT Header ~~~~~~~");
+            out("========= JWT Header =======");
             //System.out.println(header);
             JSONObject headerJson = new JSONObject(header); // Convert text to object
-            System.out.println(headerJson.toString(4)); // Print it with specified indentation
+            out(headerJson.toString(4)); // Print it with specified indentation
 
-            System.out.println("~~~~~~~~~ "+title+" JWT Body ~~~~~~~");
+            out("========= JWT Body =======");
             JSONObject bodyJson = new JSONObject(body); // Convert text to object
-            System.out.println(bodyJson.toString(4)); // Print it with specified indentation
+            out(bodyJson.toString(4)); // Print it with specified indentation
 
         }
 
-        return new no.il.dto.JWT(header,body);
+        return new JWT(header,body);
     }
 
     /**
@@ -64,7 +71,37 @@ public class decode {
         }
 
         JSONObject scopeJson = new JSONObject(json); // Convert text to object
-        System.out.println(title+scopeJson.toString(4)); // Print it with specified indentation
+        out(title+scopeJson.toString(4)); // Print it with specified indentation
+    }
+
+    public static void initiateFile() {
+        try {
+            FileOutputStream outputStream = new FileOutputStream("MaskinportenResult.log");
+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, "UTF-8");
+            bufferedWriter = new BufferedWriter(outputStreamWriter);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void closeFile() {
+        try {
+            bufferedWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void out(String output) {
+        System.out.println(output);
+        try {
+            if (bufferedWriter != null) {
+                bufferedWriter.write(output);
+                bufferedWriter.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
 

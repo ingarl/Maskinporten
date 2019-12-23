@@ -17,6 +17,7 @@ public class PropertiesReader {
     private String tokenEndpoint, scopesEndpoint, clientsEndpoint, certificateEndpoint;
 
     private boolean prettyPrintJWT;
+    private boolean saveResult;
     private X509Certificate certificate;
     private PrivateKey privateKey;
 
@@ -27,6 +28,16 @@ public class PropertiesReader {
     public void setPrettyPrintJWT(String prettyPrintJWTResult) {
         if (prettyPrintJWTResult != null && prettyPrintJWTResult.equalsIgnoreCase("true")) {
             prettyPrintJWT = true;
+        }
+    }
+
+    public boolean saveResult() {
+        return saveResult;
+    }
+
+    public void setSaveResult(String saveTheResult) {
+        if (saveTheResult != null && saveTheResult.equalsIgnoreCase("true")) {
+            saveResult = true;
         }
     }
 
@@ -149,6 +160,7 @@ public class PropertiesReader {
         Properties props = readPropertyFile(path);
 
         config.setPrettyPrintJWT(props.getProperty("prettyPrintJWT"));
+        config.setSaveResult(props.getProperty("saveResult"));
 
         config.setAud(props.getProperty("audience"));
         config.setResource(props.getProperty("resource"));

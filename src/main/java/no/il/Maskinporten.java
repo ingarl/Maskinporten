@@ -8,9 +8,9 @@ import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.util.Base64;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import no.il.utils.decode;
 import no.il.dto.TokenResponse;
 import no.il.utils.HttpCaller;
+import no.il.utils.Print;
 import no.il.utils.PropertiesReader;
 
 import java.io.IOException;
@@ -22,6 +22,14 @@ import java.util.*;
  *
  */
 public class Maskinporten {
+
+    // Constants for JWT type
+    public static String COMPANY_AUTH_JWT = "Signed JWT used to authenticate company";
+    public static String ACCESS_TOKEN = "Access token used to access an API";
+    // Constants for context
+    public static String CERTIFICATE = "Certificate";
+    public static String SCOPE = "Scope";
+    public static String CLIENT = "Client";
 
     PropertiesReader props = null;
 
@@ -43,6 +51,9 @@ public class Maskinporten {
     public Maskinporten(String path) {
         try {
             props = PropertiesReader.load(path);
+            if (props.saveResult()) {
+                Print.initiateFile();
+            }
         } catch(Exception e) {
             e.printStackTrace();
         }
@@ -75,16 +86,16 @@ public class Maskinporten {
      */
     public void getAccessToken(String clientId, String scope) {
         try {
-            System.out.println("Getting access_token for client '" + clientId + "' with scope: " + scope);
-            System.out.println("---------------------------------------------");
+            Print.out("Getting access_token for client '" + clientId + "' with scope: " + scope);
+            Print.out("---------------------------------------------");
 
-            String svvJWT = generateSignedJWT(clientId, scope);
-            decode.JWT(svvJWT, "Virksomhet", props.prettyPrintJWT());
+            String signedAuthJWT = generateSignedJWT(clientId, scope);
+            Print.JWT(signedAuthJWT, "Signed JWT used to authenticate company", props);
 
-            TokenResponse tokenResponse = getTokenResponse(svvJWT);
-            decode.JWT(tokenResponse.getAccess_token(), "AccessToken", props.prettyPrintJWT());
+            TokenResponse tokenResponse = getTokenResponse(signedAuthJWT);
+            Print.JWT(tokenResponse.getAccess_token(), "Access token to be used to access an API", props);
 
-            System.out.println("---------------------------------------------\n\n");
+            Print.out("---------------------------------------------\n\n");
         } catch(Exception e) {
             e.printStackTrace();
         }
@@ -98,19 +109,19 @@ public class Maskinporten {
      */
     public void listClients(String clientId) {
         try {
-            System.out.println("Getting all SVV clients");
-            System.out.println("---------------------------------------------");
+            Print.out("Getting all SVV clients");
+            Print.out("---------------------------------------------");
 
-            String adminJWT = generateSignedJWT(clientId, "idporten:dcr.read");
-            decode.JWT(adminJWT, "Virksomhet", props.prettyPrintJWT());
+            String signedAuthJWT = generateSignedJWT(clientId, "idporten:dcr.read");
+            Print.JWT(signedAuthJWT, "Signed JWT used to authenticate company", props);
 
-            TokenResponse tokenResponse = getTokenResponse(adminJWT);
-            decode.JWT(tokenResponse.getAccess_token(), "AccessToken", props.prettyPrintJWT());
+            TokenResponse tokenResponse = getTokenResponse(signedAuthJWT);
+            Print.JWT(tokenResponse.getAccess_token(), "Access token to be used to access an API", props);
 
             String clients = getClient(tokenResponse.getAccess_token());
-            decode.JSON("All clients:\n", clients);
+            Print.JSON("All clients:\n", clients);
 
-            System.out.println("---------------------------------------------\n\n");
+            Print.out("---------------------------------------------\n\n");
         } catch(Exception e) {
             e.printStackTrace();
         }
@@ -122,20 +133,20 @@ public class Maskinporten {
      */
     public void listScopes(String clientId) {
         try {
-            System.out.println("Getting all scopes defined by clients company");
-            System.out.println("---------------------------------------------");
+            Print.out("Getting all scopes defined by clients company");
+            Print.out("---------------------------------------------");
 
             //Generate SVV JWT used to authenticate SVV against Maskinporten.
-            String svvJWT = generateSignedJWT(clientId, "idporten:scopes.read");
-            decode.JWT(svvJWT, "Virksomhet", props.prettyPrintJWT());
+            String signedAuthJWT = generateSignedJWT(clientId, "idporten:scopes.read");
+            Print.JWT(signedAuthJWT, "Signed JWT used to authenticate company", props);
 
-            TokenResponse tokenResponse = getTokenResponse(svvJWT);
-            decode.JWT(tokenResponse.getAccess_token(), "AccessToken", props.prettyPrintJWT());
+            TokenResponse tokenResponse = getTokenResponse(signedAuthJWT);
+            Print.JWT(tokenResponse.getAccess_token(), "Access token to be used to access an API", props);
 
             String scopes = getScopes(tokenResponse.getAccess_token());
-            decode.JSON("All scopes:\n", scopes);
+            Print.JSON("All scopes:\n", scopes);
 
-            System.out.println("---------------------------------------------\n\n");
+            Print.out("---------------------------------------------\n\n");
         } catch(Exception e) {
             e.printStackTrace();
         }
@@ -147,19 +158,19 @@ public class Maskinporten {
      */
     public void listRegisteredCertificates(String clientId) {
         try {
-            System.out.println("Getting all certificates registered by the clients company");
-            System.out.println("---------------------------------------------");
+            Print.out("Getting all certificates registered by the clients company");
+            Print.out("---------------------------------------------");
 
-            String svvJWT = generateSignedJWT(clientId, "idporten:dcr.read");
-            decode.JWT(svvJWT, "Virksomhet", props.prettyPrintJWT());
+            String signedAuthJWT = generateSignedJWT(clientId, "idporten:dcr.read");
+            Print.JWT(signedAuthJWT, "Signed JWT used to authenticate company", props);
 
-            TokenResponse tokenResponse = getTokenResponse(svvJWT);
-            decode.JWT(tokenResponse.getAccess_token(), "AccessToken", props.prettyPrintJWT());
+            TokenResponse tokenResponse = getTokenResponse(signedAuthJWT);
+            Print.JWT(tokenResponse.getAccess_token(), "Access token to be used to access an API", props);
 
             String certs = getClientCerts(tokenResponse.getAccess_token());
-            decode.JSON("All certificates:\n", certs);
+            Print.JSON("All certificates:\n", certs);
 
-            System.out.println("---------------------------------------------\n\n");
+            Print.out("---------------------------------------------\n\n");
         } catch(Exception e) {
             e.printStackTrace();
         }
@@ -340,4 +351,6 @@ public class Maskinporten {
         }
         return null;
     }
+
+
 }

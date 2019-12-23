@@ -18,6 +18,9 @@ To use the testclient you need a property file holding your client configuration
 #Set this attribute to true if you want the access_token be shown in a readable format
 prettyPrintResult=[true|false]
 
+#Set this attribute to true if you want to print the result to file
+saveResult=[true|false]
+
 audience=<Identifier of the idporten-oidc-provider instance you want to use, i.e. for ver2 env:  https://oidc-ver2.difi.no/idporten-oidc-provider/>
 resource=<The intended audience for token. If included, the value will be transparantly set as the aud-claim in the access token>
 

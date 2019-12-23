@@ -2,3 +2,4 @@
 **/*.jks
 target/
 .idea/*
+*.log
