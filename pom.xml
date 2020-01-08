@@ -89,24 +89,6 @@
             <version>2.25</version>
         </dependency>
 
-    <!--dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-util</artifactId>
-        <version>9.4.11.v20180605</version>
-    </dependency-->
-
-    <!--dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-servlet</artifactId>
-        <version>9.4.11.v20180605</version>
-    </dependency-->
-
-    <!--dependency>
-        <groupId>org.eclipse.jetty</groupId>
-        <artifactId>jetty-server</artifactId>
-        <version>9.4.11.v20180605</version>
-    </dependency-->
-
         <dependency>
             <groupId>com.nimbusds</groupId>
             <artifactId>nimbus-jose-jwt</artifactId>

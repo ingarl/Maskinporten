@@ -344,6 +344,7 @@ public class Maskinporten {
     public static TokenResponse convertToTokenResponse(String json) {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
+            Print.JSON("====== TokenResponse from /token endpoint ======\n",json);
             TokenResponse token = objectMapper.readValue(json, TokenResponse.class);
             return token;
         } catch (IOException e) {

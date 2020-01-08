@@ -24,6 +24,10 @@ public class Print {
             return null;
         }
         String[] split_string = jwtToken.split("\\.");
+        if (split_string.length != 3) {
+            out("ERROR! Not a valid access_token. Reference/opaque token?");
+            return null;
+        }
         String base64EncodedHeader = split_string[0];
         String base64EncodedBody = split_string[1];
         String base64EncodedSignature = split_string[2];
