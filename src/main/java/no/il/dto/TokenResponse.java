@@ -12,6 +12,7 @@ public class TokenResponse {
     private String refresh_token;
     private String scope;
     private Date generated;
+    private String tokenResponseSource;
 
     //Error attributes
     private String error_description;
@@ -80,6 +81,10 @@ public class TokenResponse {
     public void setError(String error) {
         this.error = error;
     }
+
+    public String getTokenResponseSource() { return tokenResponseSource; }
+
+    public void setTokenResponseSource(String tokenResponseSource) { this.tokenResponseSource = tokenResponseSource; }
 
     @Override
     public String toString() {
